@@ -6,6 +6,7 @@ use std::env::var_os;
 use std::fs::read;
 use std::io;
 use std::io::Write as _;
+use std::ops::Not as _;
 use std::path::Path;
 
 use anyhow::Context as _;
@@ -93,14 +94,11 @@ fn main() -> Result<()> {
             let code = read(&src_path)
                 .with_context(|| format!("failed to read `{}`", src_path.display()))?;
 
-            if !has_bpf_c_ext(&src_path) {
-                let () = report_terminal(&m_ext_is_c, &code, &src_path, &mut stdout)?;
-            }
-
+            let match_ext = has_bpf_c_ext(&src_path).not().then_some(&m_ext_is_c);
             let matches =
                 lint(&code).with_context(|| format!("failed to lint `{}`", src_path.display()))?;
-            for m in matches {
-                let () = report_terminal(&m, &code, &src_path, &mut stdout)?;
+            for m in match_ext.into_iter().chain(matches.iter()) {
+                let () = report_terminal(m, &code, &src_path, &mut stdout)?;
             }
         }
     }
