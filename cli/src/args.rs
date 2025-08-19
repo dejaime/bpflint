@@ -10,7 +10,6 @@ use anyhow::Result;
 use clap::ArgAction;
 use clap::Parser;
 
-
 fn parse_files(s: &str) -> Result<Vec<PathBuf>> {
     if let Some(rest) = s.strip_prefix('@') {
         let file =
@@ -32,11 +31,11 @@ fn parse_files(s: &str) -> Result<Vec<PathBuf>> {
 
 
 fn parse_context_line_count(s: &str) -> Result<u8> {
-    let line_count = s.parse::<u8>()
+    let line_count = s
+        .parse::<u8>()
         .with_context(|| format!("invalid context line count: '{s}' (must be 0-255)"))?;
     Ok(line_count)
 }
-
 
 /// A command line interface for bpflint.
 #[derive(Debug, Parser)]
@@ -75,11 +74,12 @@ impl Args {
         if before <= 0 && after <= 0 {
             bpflint::Opts::default()
         } else {
-            bpflint::Opts { extra_lines: Some((before, after)) }
+            bpflint::Opts {
+                extra_lines: Some((before, after)),
+            }
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -89,7 +89,6 @@ mod tests {
     use std::io::Write as _;
 
     use tempfile::NamedTempFile;
-
 
     /// Make sure that we can recognize file list inputs as expected.
     #[test]
@@ -165,22 +164,42 @@ mod tests {
         // -B 3 -A 4
         let args = try_parse(["test.c", "-B", "3", "-A", "4"]).unwrap();
         let context = args.additional_context();
-        assert_eq!(context, bpflint::Opts { extra_lines: Some((3, 4)) });
+        assert_eq!(
+            context,
+            bpflint::Opts {
+                extra_lines: Some((3, 4))
+            }
+        );
 
         // -C 4
         let args = try_parse(["test.c", "-C", "4"]).unwrap();
         let context = args.additional_context();
-        assert_eq!(context, bpflint::Opts { extra_lines: Some((4, 4)) });
+        assert_eq!(
+            context,
+            bpflint::Opts {
+                extra_lines: Some((4, 4))
+            }
+        );
 
         // -C 3 -B 2 -A 4 (should use max values)
         let args = try_parse(["test.c", "-C", "3", "-B", "2", "-A", "4"]).unwrap();
         let context = args.additional_context();
-        assert_eq!(context, bpflint::Opts { extra_lines: Some((3, 4)) }); // max(3, 2) = 3, max(3, 4) = 4
+        assert_eq!(
+            context,
+            bpflint::Opts {
+                extra_lines: Some((3, 4))
+            }
+        ); // max(3, 2) = 3, max(3, 4) = 4
 
         // -C 5 -B 2 -A 1 (context wins)
         let args = try_parse(["test.c", "-C", "5", "-B", "2", "-A", "1"]).unwrap();
         let context = args.additional_context();
-        assert_eq!(context, bpflint::Opts { extra_lines: Some((5, 5)) }); // max(5, 2) = 5, max(5, 1) = 5
+        assert_eq!(
+            context,
+            bpflint::Opts {
+                extra_lines: Some((5, 5))
+            }
+        ); // max(5, 2) = 5, max(5, 1) = 5
     }
 
     /// Test parse_context_line_count function directly.

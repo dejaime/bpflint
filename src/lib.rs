@@ -34,7 +34,6 @@ mod report;
 
 use std::ops;
 
-
 /// A position in a multi-line text document, in terms of rows and columns.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Point {
@@ -60,10 +59,9 @@ pub use crate::lint::LintMatch;
 pub use crate::lint::LintMeta;
 pub use crate::lint::builtin_lints;
 pub use crate::lint::lint;
+pub use crate::report::Opts;
 pub use crate::report::report_terminal;
 pub use crate::report::report_terminal_opts;
-pub use crate::report::Opts;
-
 
 #[cfg(target_arch = "wasm32")]
 mod wasm {

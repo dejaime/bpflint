@@ -6,11 +6,10 @@ use anyhow::Result;
 use crate::LintMatch;
 use crate::lines::Lines;
 
-
 /// Configuration options for terminal reporting.
 #[derive(Default, Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Opts {
-    /// Extra context lines: (lines_before, lines_after).
+    /// Extra context lines: (`lines_before`, `lines_after`).
     pub extra_lines: Option<(u8, u8)>,
 }
 
@@ -31,7 +30,6 @@ impl Opts {
         }
     }
 }
-
 
 /// Find the byte position of the start of a specific line number (0-indexed)
 fn find_line_start_by_row(code: &[u8], target_row: usize) -> usize {
@@ -96,8 +94,6 @@ fn find_context_lines_after(code: &[u8], end_row: usize, count: usize) -> Vec<(u
     context_lines
 }
 
-
-
 /// Report a lint match in terminal style.
 ///
 /// - `match` is the match to create a report for
@@ -126,7 +122,6 @@ pub fn report_terminal(
 ) -> Result<()> {
     report_terminal_opts(r#match, code, path, writer, Opts::default())
 }
-
 
 /// Report a lint match in terminal style with extra lines for context as configured.
 ///
@@ -174,7 +169,7 @@ pub fn report_terminal_opts(
     writeln!(writer, "  --> {}:{start_row}:{start_col}", path.display())?;
 
     if range.bytes.is_empty() {
-        return Ok(())
+        return Ok(());
     }
 
     // Find context lines
@@ -269,7 +264,6 @@ pub fn report_terminal_opts(
     Ok(())
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -280,7 +274,6 @@ mod tests {
 
     use crate::Point;
     use crate::Range;
-
 
     /// Tests that a match with an empty range includes no code snippet.
     #[test]
@@ -337,19 +330,17 @@ mod tests {
         let report = String::from_utf8(report).unwrap();
 
         // Build expected output programmatically to preserve trailing spaces
-        let expected = format!(
-            concat!(
-                "warning: [probe-read] bpf_probe_read() is deprecated\n",
-                "  --> <stdin>:2:4\n",
-                "  | \n",
-                "2 |  /     bpf_probe_read(\n",
-                "3 |  |       event.comm,\n",
-                "4 |  |       TASK_COMM_LEN,\n",
-                "5 |  |       prev->comm);\n",
-                "  |  |_________________^\n",
-                "  | \n"
-            )
-        );
+        let expected = format!(concat!(
+            "warning: [probe-read] bpf_probe_read() is deprecated\n",
+            "  --> <stdin>:2:4\n",
+            "  | \n",
+            "2 |  /     bpf_probe_read(\n",
+            "3 |  |       event.comm,\n",
+            "4 |  |       TASK_COMM_LEN,\n",
+            "5 |  |       prev->comm);\n",
+            "  |  |_________________^\n",
+            "  | \n"
+        ));
         assert_eq!(report, expected);
     }
 
@@ -381,16 +372,14 @@ mod tests {
         let report = String::from_utf8(report).unwrap();
 
         // Build expected output programmatically to preserve trailing spaces
-        let expected = format!(
-            concat!(
-                "warning: [probe-read] bpf_probe_read() is deprecated\n",
-                "  --> <stdin>:5:4\n",
-                "  | \n",
-                "5 |     bpf_probe_read(event.comm, TASK_COMM_LEN, prev->comm);\n",
-                "  |     ^^^^^^^^^^^^^^\n",
-                "  | \n"
-            )
-        );
+        let expected = format!(concat!(
+            "warning: [probe-read] bpf_probe_read() is deprecated\n",
+            "  --> <stdin>:5:4\n",
+            "  | \n",
+            "5 |     bpf_probe_read(event.comm, TASK_COMM_LEN, prev->comm);\n",
+            "  |     ^^^^^^^^^^^^^^\n",
+            "  | \n"
+        ));
         assert_eq!(report, expected);
     }
 
@@ -419,16 +408,14 @@ mod tests {
         let report = String::from_utf8(report).unwrap();
 
         // Build expected output programmatically to preserve trailing spaces
-        let expected = format!(
-            concat!(
-                "warning: [unstable-attach-point] kprobe/kretprobe/fentry/fexit are unstable\n",
-                "  --> <stdin>:0:4\n",
-                "  | \n",
-                "0 | SEC(\"kprobe/test\")\n",
-                "  |     ^^^^^^^^^^^^^\n",
-                "  | \n"
-            )
-        );
+        let expected = format!(concat!(
+            "warning: [unstable-attach-point] kprobe/kretprobe/fentry/fexit are unstable\n",
+            "  --> <stdin>:0:4\n",
+            "  | \n",
+            "0 | SEC(\"kprobe/test\")\n",
+            "  |     ^^^^^^^^^^^^^\n",
+            "  | \n"
+        ));
         assert_eq!(report, expected);
     }
 
@@ -460,8 +447,16 @@ mod tests {
         let mut report_old = Vec::new();
         let mut report_new = Vec::new();
 
-        let () = report_terminal(&m, code.as_bytes(), Path::new("<stdin>"), &mut report_old).unwrap();
-        let () = report_terminal_opts(&m, code.as_bytes(), Path::new("<stdin>"), &mut report_new, Opts::default()).unwrap();
+        let () =
+            report_terminal(&m, code.as_bytes(), Path::new("<stdin>"), &mut report_old).unwrap();
+        let () = report_terminal_opts(
+            &m,
+            code.as_bytes(),
+            Path::new("<stdin>"),
+            &mut report_new,
+            Opts::default(),
+        )
+        .unwrap();
 
         assert_eq!(report_old, report_new);
     }
@@ -490,23 +485,30 @@ mod tests {
             },
         };
         let mut report = Vec::new();
-        let () = report_terminal_opts(&m, code.as_bytes(), Path::new("<stdin>"), &mut report, Opts { extra_lines: Some((2, 1)) }).unwrap();
+        let () = report_terminal_opts(
+            &m,
+            code.as_bytes(),
+            Path::new("<stdin>"),
+            &mut report,
+            Opts {
+                extra_lines: Some((2, 1)),
+            },
+        )
+        .unwrap();
         let report = String::from_utf8(report).unwrap();
 
         // Build expected output programmatically to preserve trailing spaces
-        let expected = format!(
-            concat!(
-                "warning: [probe-read] bpf_probe_read() is deprecated\n",
-                "  --> <stdin>:5:4\n",
-                "  | \n",
-                "3 |     struct task_struct *prev = (struct task_struct *)ctx[1];\n",
-                "4 |     struct event event = {{0}};\n",
-                "5 |     bpf_probe_read(event.comm, TASK_COMM_LEN, prev->comm);\n",
-                "  |     ^^^^^^^^^^^^^^\n",
-                "6 |     return 0;\n",
-                "  | \n"
-            )
-        );
+        let expected = format!(concat!(
+            "warning: [probe-read] bpf_probe_read() is deprecated\n",
+            "  --> <stdin>:5:4\n",
+            "  | \n",
+            "3 |     struct task_struct *prev = (struct task_struct *)ctx[1];\n",
+            "4 |     struct event event = {{0}};\n",
+            "5 |     bpf_probe_read(event.comm, TASK_COMM_LEN, prev->comm);\n",
+            "  |     ^^^^^^^^^^^^^^\n",
+            "6 |     return 0;\n",
+            "  | \n"
+        ));
         assert_eq!(report, expected);
     }
 
@@ -534,25 +536,32 @@ mod tests {
             },
         };
         let mut report = Vec::new();
-        let () = report_terminal_opts(&m, code.as_bytes(), Path::new("<stdin>"), &mut report, Opts { extra_lines: Some((1, 1)) }).unwrap();
+        let () = report_terminal_opts(
+            &m,
+            code.as_bytes(),
+            Path::new("<stdin>"),
+            &mut report,
+            Opts {
+                extra_lines: Some((1, 1)),
+            },
+        )
+        .unwrap();
         let report = String::from_utf8(report).unwrap();
 
         // Build expected output programmatically to preserve trailing spaces
-        let expected = format!(
-            concat!(
-                "warning: [probe-read] bpf_probe_read() is deprecated\n",
-                "  --> <stdin>:2:4\n",
-                "  | \n",
-                "1 | int handle__sched_switch(u64 *ctx) {{\n",
-                "2 |  /     bpf_probe_read(\n",
-                "3 |  |       event.comm,\n",
-                "4 |  |       TASK_COMM_LEN,\n",
-                "5 |  |       prev->comm);\n",
-                "  |  |_________________^\n",
-                "6 |     return 0;\n",
-                "  | \n"
-            )
-        );
+        let expected = format!(concat!(
+            "warning: [probe-read] bpf_probe_read() is deprecated\n",
+            "  --> <stdin>:2:4\n",
+            "  | \n",
+            "1 | int handle__sched_switch(u64 *ctx) {{\n",
+            "2 |  /     bpf_probe_read(\n",
+            "3 |  |       event.comm,\n",
+            "4 |  |       TASK_COMM_LEN,\n",
+            "5 |  |       prev->comm);\n",
+            "  |  |_________________^\n",
+            "6 |     return 0;\n",
+            "  | \n"
+        ));
         assert_eq!(report, expected);
     }
 
@@ -576,22 +585,29 @@ mod tests {
             },
         };
         let mut report = Vec::new();
-        let () = report_terminal_opts(&m, code.as_bytes(), Path::new("<stdin>"), &mut report, Opts { extra_lines: Some((5, 2)) }).unwrap();
+        let () = report_terminal_opts(
+            &m,
+            code.as_bytes(),
+            Path::new("<stdin>"),
+            &mut report,
+            Opts {
+                extra_lines: Some((5, 2)),
+            },
+        )
+        .unwrap();
         let report = String::from_utf8(report).unwrap();
 
         // Build expected output programmatically to preserve trailing spaces
-        let expected = format!(
-            concat!(
-                "warning: [unstable-attach-point] kprobe/kretprobe/fentry/fexit are unstable\n",
-                "  --> <stdin>:0:4\n",
-                "  | \n",
-                "0 | SEC(\"kprobe/test\")\n",
-                "  |     ^^^^^^^^^^^^^\n",
-                "1 | int handle__test(void)\n",
-                "2 | {{\n",
-                "  | \n"
-            )
-        );
+        let expected = format!(concat!(
+            "warning: [unstable-attach-point] kprobe/kretprobe/fentry/fexit are unstable\n",
+            "  --> <stdin>:0:4\n",
+            "  | \n",
+            "0 | SEC(\"kprobe/test\")\n",
+            "  |     ^^^^^^^^^^^^^\n",
+            "1 | int handle__test(void)\n",
+            "2 | {{\n",
+            "  | \n"
+        ));
         assert_eq!(report, expected);
     }
 
@@ -616,23 +632,30 @@ mod tests {
             },
         };
         let mut report = Vec::new();
-        let () = report_terminal_opts(&m, code.as_bytes(), Path::new("<stdin>"), &mut report, Opts { extra_lines: Some((1, 5)) }).unwrap();
+        let () = report_terminal_opts(
+            &m,
+            code.as_bytes(),
+            Path::new("<stdin>"),
+            &mut report,
+            Opts {
+                extra_lines: Some((1, 5)),
+            },
+        )
+        .unwrap();
         let report = String::from_utf8(report).unwrap();
 
         // Build expected output programmatically to preserve trailing spaces
-        let expected = format!(
-            concat!(
-                "warning: [probe-read] bpf_probe_read() is deprecated\n",
-                "  --> <stdin>:3:4\n",
-                "  | \n",
-                "2 | {{\n",
-                "3 |     bpf_probe_read(event.comm, TASK_COMM_LEN, prev->comm);\n",
-                "  |     ^^^^^^^^^^^^^^\n",
-                "4 | }}\n",
-                "5 | \n",
-                "  | \n"
-            )
-        );
+        let expected = format!(concat!(
+            "warning: [probe-read] bpf_probe_read() is deprecated\n",
+            "  --> <stdin>:3:4\n",
+            "  | \n",
+            "2 | {{\n",
+            "3 |     bpf_probe_read(event.comm, TASK_COMM_LEN, prev->comm);\n",
+            "  |     ^^^^^^^^^^^^^^\n",
+            "4 | }}\n",
+            "5 | \n",
+            "  | \n"
+        ));
         assert_eq!(report, expected);
     }
 
@@ -644,14 +667,16 @@ mod tests {
         assert_eq!(default_opts.lines_before(), 0);
         assert_eq!(default_opts.lines_after(), 0);
 
-        let extra_opts = Opts { extra_lines: Some((3, 5)) };
+        let extra_opts = Opts {
+            extra_lines: Some((3, 5)),
+        };
         assert_eq!(extra_opts.lines_before(), 3);
         assert_eq!(extra_opts.lines_after(), 5);
     }
 
     /// Test helper functions for finding context lines.
     #[test]
-    fn find_line_start_by_row() {
+    fn line_start_by_row() {
         let code = b"line 0\nline 1\nline 2\n";
         assert_eq!(find_line_start_by_row(code, 0), 0);
         assert_eq!(find_line_start_by_row(code, 1), 7);
@@ -660,7 +685,7 @@ mod tests {
     }
 
     #[test]
-    fn count_lines() {
+    fn line_counting() {
         assert_eq!(count_lines(b""), 0);
         assert_eq!(count_lines(b"single line"), 1);
         assert_eq!(count_lines(b"line 1\nline 2"), 2);
@@ -668,7 +693,7 @@ mod tests {
     }
 
     #[test]
-    fn find_context_lines_before() {
+    fn context_lines_before() {
         let code = b"line 0\nline 1\nline 2\nline 3\n";
 
         // No context requested
@@ -687,7 +712,7 @@ mod tests {
     }
 
     #[test]
-    fn find_context_lines_after() {
+    fn context_lines_after() {
         let code = b"line 0\nline 1\nline 2\nline 3\n";
 
         // No context requested
