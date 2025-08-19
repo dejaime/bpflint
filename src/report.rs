@@ -329,18 +329,17 @@ mod tests {
         let () = report_terminal(&m, code.as_bytes(), Path::new("<stdin>"), &mut report).unwrap();
         let report = String::from_utf8(report).unwrap();
 
-        // Build expected output programmatically to preserve trailing spaces
-        let expected = format!(concat!(
-            "warning: [probe-read] bpf_probe_read() is deprecated\n",
-            "  --> <stdin>:2:4\n",
-            "  | \n",
-            "2 |  /     bpf_probe_read(\n",
-            "3 |  |       event.comm,\n",
-            "4 |  |       TASK_COMM_LEN,\n",
-            "5 |  |       prev->comm);\n",
-            "  |  |_________________^\n",
-            "  | \n"
-        ));
+        let expected = indoc! { r#"
+            warning: [probe-read] bpf_probe_read() is deprecated
+              --> <stdin>:2:4
+              | 
+            2 |  /     bpf_probe_read(
+            3 |  |       event.comm,
+            4 |  |       TASK_COMM_LEN,
+            5 |  |       prev->comm);
+              |  |_________________^
+              | 
+        "# };
         assert_eq!(report, expected);
     }
 
@@ -371,15 +370,14 @@ mod tests {
         let () = report_terminal(&m, code.as_bytes(), Path::new("<stdin>"), &mut report).unwrap();
         let report = String::from_utf8(report).unwrap();
 
-        // Build expected output programmatically to preserve trailing spaces
-        let expected = format!(concat!(
-            "warning: [probe-read] bpf_probe_read() is deprecated\n",
-            "  --> <stdin>:5:4\n",
-            "  | \n",
-            "5 |     bpf_probe_read(event.comm, TASK_COMM_LEN, prev->comm);\n",
-            "  |     ^^^^^^^^^^^^^^\n",
-            "  | \n"
-        ));
+        let expected = indoc! { r#"
+            warning: [probe-read] bpf_probe_read() is deprecated
+              --> <stdin>:5:4
+              | 
+            5 |     bpf_probe_read(event.comm, TASK_COMM_LEN, prev->comm);
+              |     ^^^^^^^^^^^^^^
+              | 
+        "# };
         assert_eq!(report, expected);
     }
 
@@ -407,15 +405,14 @@ mod tests {
         let () = report_terminal(&m, code.as_bytes(), Path::new("<stdin>"), &mut report).unwrap();
         let report = String::from_utf8(report).unwrap();
 
-        // Build expected output programmatically to preserve trailing spaces
-        let expected = format!(concat!(
-            "warning: [unstable-attach-point] kprobe/kretprobe/fentry/fexit are unstable\n",
-            "  --> <stdin>:0:4\n",
-            "  | \n",
-            "0 | SEC(\"kprobe/test\")\n",
-            "  |     ^^^^^^^^^^^^^\n",
-            "  | \n"
-        ));
+        let expected = indoc! { r#"
+            warning: [unstable-attach-point] kprobe/kretprobe/fentry/fexit are unstable
+              --> <stdin>:0:4
+              | 
+            0 | SEC("kprobe/test")
+              |     ^^^^^^^^^^^^^
+              | 
+        "# };
         assert_eq!(report, expected);
     }
 
@@ -497,18 +494,17 @@ mod tests {
         .unwrap();
         let report = String::from_utf8(report).unwrap();
 
-        // Build expected output programmatically to preserve trailing spaces
-        let expected = format!(concat!(
-            "warning: [probe-read] bpf_probe_read() is deprecated\n",
-            "  --> <stdin>:5:4\n",
-            "  | \n",
-            "3 |     struct task_struct *prev = (struct task_struct *)ctx[1];\n",
-            "4 |     struct event event = {{0}};\n",
-            "5 |     bpf_probe_read(event.comm, TASK_COMM_LEN, prev->comm);\n",
-            "  |     ^^^^^^^^^^^^^^\n",
-            "6 |     return 0;\n",
-            "  | \n"
-        ));
+        let expected = indoc! { r#"
+            warning: [probe-read] bpf_probe_read() is deprecated
+              --> <stdin>:5:4
+              | 
+            3 |     struct task_struct *prev = (struct task_struct *)ctx[1];
+            4 |     struct event event = {0};
+            5 |     bpf_probe_read(event.comm, TASK_COMM_LEN, prev->comm);
+              |     ^^^^^^^^^^^^^^
+            6 |     return 0;
+              | 
+        "# };
         assert_eq!(report, expected);
     }
 
@@ -548,20 +544,19 @@ mod tests {
         .unwrap();
         let report = String::from_utf8(report).unwrap();
 
-        // Build expected output programmatically to preserve trailing spaces
-        let expected = format!(concat!(
-            "warning: [probe-read] bpf_probe_read() is deprecated\n",
-            "  --> <stdin>:2:4\n",
-            "  | \n",
-            "1 | int handle__sched_switch(u64 *ctx) {{\n",
-            "2 |  /     bpf_probe_read(\n",
-            "3 |  |       event.comm,\n",
-            "4 |  |       TASK_COMM_LEN,\n",
-            "5 |  |       prev->comm);\n",
-            "  |  |_________________^\n",
-            "6 |     return 0;\n",
-            "  | \n"
-        ));
+        let expected = indoc! { r#"
+            warning: [probe-read] bpf_probe_read() is deprecated
+              --> <stdin>:2:4
+              | 
+            1 | int handle__sched_switch(u64 *ctx) {
+            2 |  /     bpf_probe_read(
+            3 |  |       event.comm,
+            4 |  |       TASK_COMM_LEN,
+            5 |  |       prev->comm);
+              |  |_________________^
+            6 |     return 0;
+              | 
+        "# };
         assert_eq!(report, expected);
     }
 
@@ -597,17 +592,16 @@ mod tests {
         .unwrap();
         let report = String::from_utf8(report).unwrap();
 
-        // Build expected output programmatically to preserve trailing spaces
-        let expected = format!(concat!(
-            "warning: [unstable-attach-point] kprobe/kretprobe/fentry/fexit are unstable\n",
-            "  --> <stdin>:0:4\n",
-            "  | \n",
-            "0 | SEC(\"kprobe/test\")\n",
-            "  |     ^^^^^^^^^^^^^\n",
-            "1 | int handle__test(void)\n",
-            "2 | {{\n",
-            "  | \n"
-        ));
+        let expected = indoc! { r#"
+            warning: [unstable-attach-point] kprobe/kretprobe/fentry/fexit are unstable
+              --> <stdin>:0:4
+              | 
+            0 | SEC("kprobe/test")
+              |     ^^^^^^^^^^^^^
+            1 | int handle__test(void)
+            2 | {
+              | 
+        "# };
         assert_eq!(report, expected);
     }
 
@@ -644,18 +638,17 @@ mod tests {
         .unwrap();
         let report = String::from_utf8(report).unwrap();
 
-        // Build expected output programmatically to preserve trailing spaces
-        let expected = format!(concat!(
-            "warning: [probe-read] bpf_probe_read() is deprecated\n",
-            "  --> <stdin>:3:4\n",
-            "  | \n",
-            "2 | {{\n",
-            "3 |     bpf_probe_read(event.comm, TASK_COMM_LEN, prev->comm);\n",
-            "  |     ^^^^^^^^^^^^^^\n",
-            "4 | }}\n",
-            "5 | \n",
-            "  | \n"
-        ));
+        let expected = indoc! { r#"
+            warning: [probe-read] bpf_probe_read() is deprecated
+              --> <stdin>:3:4
+              | 
+            2 | {
+            3 |     bpf_probe_read(event.comm, TASK_COMM_LEN, prev->comm);
+              |     ^^^^^^^^^^^^^^
+            4 | }
+            5 | 
+              | 
+        "# };
         assert_eq!(report, expected);
     }
 
