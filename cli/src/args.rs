@@ -1,3 +1,4 @@
+use std::cmp::max;
 use std::fs::File;
 use std::io::BufRead as _;
 use std::io::BufReader;
@@ -30,6 +31,13 @@ fn parse_files(s: &str) -> Result<Vec<PathBuf>> {
 }
 
 
+fn parse_context_line_count(s: &str) -> Result<u8> {
+    let line_count = s.parse::<u8>()
+        .with_context(|| format!("invalid context line count: '{s}' (must be 0-255)"))?;
+    Ok(line_count)
+}
+
+
 /// A command line interface for bpflint.
 #[derive(Debug, Parser)]
 #[command(version = env!("VERSION"))]
@@ -46,6 +54,30 @@ pub struct Args {
     /// Increase verbosity (can be supplied multiple times).
     #[arg(short = 'v', long = "verbose", global = true, action = ArgAction::Count)]
     pub verbosity: u8,
+    /// Number of lines to show before the error line.
+    #[arg(short = 'B', long = "before", value_parser = parse_context_line_count)]
+    pub before: Option<u8>,
+    /// Number of lines to show after the error line.
+    #[arg(short = 'A', long = "after", value_parser = parse_context_line_count)]
+    pub after: Option<u8>,
+    /// Number of lines to show before and after the error line.
+    #[arg(short = 'C', long = "context", value_parser = parse_context_line_count)]
+    pub context: Option<u8>,
+}
+
+impl Args {
+    /// Calculate the effective context configuration.
+    pub fn additional_context(&self) -> bpflint::AdditionalContext {
+        let before = max(self.before.unwrap_or(0), self.context.unwrap_or(0));
+        let after = max(self.after.unwrap_or(0), self.context.unwrap_or(0));
+
+        // If both are 0 (default), use None
+        if before <= 0 && after <= 0 {
+            bpflint::AdditionalContext::None
+        } else {
+            bpflint::AdditionalContext::Extra(before, after)
+        }
+    }
 }
 
 
@@ -109,5 +141,63 @@ mod tests {
                 vec![PathBuf::from("1st"), PathBuf::from("2nd")]
             ]
         );
+    }
+
+    /// Test context argument parsing and effective values.
+    #[test]
+    fn context_argument_parsing() {
+        fn try_parse<I, T>(args: I) -> Result<Args, clap::Error>
+        where
+            I: IntoIterator<Item = T>,
+            T: Into<OsString> + Clone,
+        {
+            let args = [OsString::from("executable")]
+                .into_iter()
+                .chain(args.into_iter().map(T::into));
+            Args::try_parse_from(args)
+        }
+
+        // Default values
+        let args = try_parse(["test.c"]).unwrap();
+        let context = args.additional_context();
+        assert_eq!(context, bpflint::AdditionalContext::None);
+
+        // -B 3 -A 4
+        let args = try_parse(["test.c", "-B", "3", "-A", "4"]).unwrap();
+        let context = args.additional_context();
+        assert_eq!(context, bpflint::AdditionalContext::Extra(3, 4));
+
+        // -C 4
+        let args = try_parse(["test.c", "-C", "4"]).unwrap();
+        let context = args.additional_context();
+        assert_eq!(context, bpflint::AdditionalContext::Extra(4, 4));
+
+        // -C 3 -B 2 -A 4 (should use max values)
+        let args = try_parse(["test.c", "-C", "3", "-B", "2", "-A", "4"]).unwrap();
+        let context = args.additional_context();
+        assert_eq!(context, bpflint::AdditionalContext::Extra(3, 4)); // max(3, 2) = 3, max(3, 4) = 4
+
+        // -C 5 -B 2 -A 1 (context wins)
+        let args = try_parse(["test.c", "-C", "5", "-B", "2", "-A", "1"]).unwrap();
+        let context = args.additional_context();
+        assert_eq!(context, bpflint::AdditionalContext::Extra(5, 5)); // max(5, 2) = 5, max(5, 1) = 5
+    }
+
+    /// Test parse_context_line_count function directly.
+    #[test]
+    fn parse_context_line_count_validation() {
+        // Valid values
+        assert_eq!(parse_context_line_count("0").unwrap(), 0);
+        assert_eq!(parse_context_line_count("1").unwrap(), 1);
+        assert_eq!(parse_context_line_count("255").unwrap(), 255);
+
+        // Invalid values - out of range
+        assert!(parse_context_line_count("256").is_err());
+        assert!(parse_context_line_count("1000").is_err());
+        assert!(parse_context_line_count("-1").is_err());
+
+        // Invalid values - not numbers
+        assert!(parse_context_line_count("abc").is_err());
+        assert!(parse_context_line_count("").is_err());
     }
 }

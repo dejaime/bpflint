@@ -32,7 +32,7 @@ use bpflint::Point;
 use bpflint::Range;
 use bpflint::builtin_lints;
 use bpflint::lint;
-use bpflint::report_terminal;
+use bpflint::report_terminal_opts;
 
 
 fn has_bpf_c_ext(path: &Path) -> bool {
@@ -74,11 +74,15 @@ where
 
 
 fn main_impl() -> Result<(), ExitError> {
+    let args = args::Args::parse();
     let args::Args {
         srcs,
         print_lints,
         verbosity,
-    } = args::Args::parse();
+        ..
+    } = &args;
+
+    let additional_context_config = args.additional_context();
 
     let level = match verbosity {
         0 => Level::WARN,
@@ -117,7 +121,7 @@ fn main_impl() -> Result<(), ExitError> {
         },
     };
 
-    if print_lints {
+    if *print_lints {
         for lint in builtin_lints() {
             writeln!(&mut stdout, "{}", lint.name)?;
         }
@@ -132,7 +136,7 @@ fn main_impl() -> Result<(), ExitError> {
             let matches =
                 lint(&code).with_context(|| format!("failed to lint `{}`", src_path.display()))?;
             for m in match_ext.into_iter().chain(matches.iter()) {
-                let () = report_terminal(m, &code, &src_path, &mut stdout)?;
+                let () = report_terminal_opts(m, &code, &src_path, &mut stdout, additional_context_config)?;
                 if result.is_ok() {
                     result = Err(ExitError::ExitCode(ExitCode::FAILURE));
                 }
