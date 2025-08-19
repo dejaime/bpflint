@@ -29,7 +29,25 @@ fn parse_files(s: &str) -> Result<Vec<PathBuf>> {
     }
 }
 
-
+/// Parse a context line count for CLI arguments, with enhanced error reporting.
+///
+/// This function is used as a value parser for line count arguments (e.g. --before, --after, --context)
+/// It converts a string input to a u8 value while providing clear error messages
+/// when the input is invalid.
+///
+/// # Arguments
+/// * `s` - Raw input string, expected to be a number from 0 to 255 inclusive.
+///
+/// # Returns
+/// * `Ok(u8)` - The parsed line count if valid
+/// * `Err(anyhow::Error)` - If the input cannot be parsed as u8 or is out of range
+///
+/// # Examples
+/// ```
+/// assert_eq!(parse_context_line_count("5").unwrap(), 5);
+/// assert!(parse_context_line_count("256").is_err());
+/// assert!(parse_context_line_count("abc").is_err());
+/// ```
 fn parse_context_line_count(s: &str) -> Result<u8> {
     let line_count = s
         .parse::<u8>()
