@@ -7,35 +7,27 @@ use crate::LintMatch;
 use crate::lines::Lines;
 
 
-/// Configuration for additional context lines around lint errors.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum AdditionalContext {
-    /// No additional context lines (default behavior).
-    None,
-    /// Show extra context lines: (lines_before, lines_after).
-    Extra(u8, u8),
+/// Configuration options for terminal reporting.
+#[derive(Default, Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Opts {
+    /// Extra context lines: (lines_before, lines_after).
+    pub extra_lines: Option<(u8, u8)>,
 }
 
-impl Default for AdditionalContext {
-    fn default() -> Self {
-        Self::None
-    }
-}
-
-impl AdditionalContext {
+impl Opts {
     /// Get the number of lines to show before the error.
     pub fn lines_before(self) -> usize {
-        match self {
-            Self::None => 0,
-            Self::Extra(before, _) => before as usize,
+        match self.extra_lines {
+            None => 0,
+            Some((before, _)) => before as usize,
         }
     }
 
     /// Get the number of lines to show after the error.
     pub fn lines_after(self) -> usize {
-        match self {
-            Self::None => 0,
-            Self::Extra(_, after) => after as usize,
+        match self.extra_lines {
+            None => 0,
+            Some((_, after)) => after as usize,
         }
     }
 }
@@ -132,7 +124,7 @@ pub fn report_terminal(
     path: &Path,
     writer: &mut dyn io::Write,
 ) -> Result<()> {
-    report_terminal_opts(r#match, code, path, writer, AdditionalContext::None)
+    report_terminal_opts(r#match, code, path, writer, Opts::default())
 }
 
 
@@ -145,7 +137,7 @@ pub fn report_terminal(
 ///   and is used to enhance the generated report
 /// - `writer` is a reference to a [`io::Write`] to which to write the
 ///   report
-/// - `context` specifies how many context lines to show around the error
+/// - `opts` specifies the reporting options including context lines
 ///
 /// # Example
 /// ```text
@@ -166,7 +158,7 @@ pub fn report_terminal_opts(
     code: &[u8],
     path: &Path,
     writer: &mut dyn io::Write,
-    context: AdditionalContext,
+    opts: Opts,
 ) -> Result<()> {
     let LintMatch {
         lint_name,
@@ -185,12 +177,9 @@ pub fn report_terminal_opts(
         return Ok(())
     }
 
-    let lines_before = context.lines_before();
-    let lines_after = context.lines_after();
-
-    // Find context lines (including empty lines)
-    let context_lines_before = find_context_lines_before(code, start_row, lines_before);
-    let context_lines_after = find_context_lines_after(code, end_row, lines_after);
+    // Find context lines
+    let context_lines_before = find_context_lines_before(code, start_row, opts.lines_before());
+    let context_lines_after = find_context_lines_after(code, end_row, opts.lines_after());
 
     // Calculate the maximum row number for consistent indentation
     let max_row = context_lines_after
@@ -443,7 +432,7 @@ mod tests {
         assert_eq!(report, expected);
     }
 
-    /// Test that `report_terminal_opts` with `AdditionalContext::None` behaves
+    /// Test that `report_terminal_opts` with `Opts::default()` behaves
     /// identically to `report_terminal`.
     #[test]
     fn report_terminal_opts_none_context() {
@@ -472,7 +461,7 @@ mod tests {
         let mut report_new = Vec::new();
 
         let () = report_terminal(&m, code.as_bytes(), Path::new("<stdin>"), &mut report_old).unwrap();
-        let () = report_terminal_opts(&m, code.as_bytes(), Path::new("<stdin>"), &mut report_new, AdditionalContext::None).unwrap();
+        let () = report_terminal_opts(&m, code.as_bytes(), Path::new("<stdin>"), &mut report_new, Opts::default()).unwrap();
 
         assert_eq!(report_old, report_new);
     }
@@ -501,7 +490,7 @@ mod tests {
             },
         };
         let mut report = Vec::new();
-        let () = report_terminal_opts(&m, code.as_bytes(), Path::new("<stdin>"), &mut report, AdditionalContext::Extra(2, 1)).unwrap();
+        let () = report_terminal_opts(&m, code.as_bytes(), Path::new("<stdin>"), &mut report, Opts { extra_lines: Some((2, 1)) }).unwrap();
         let report = String::from_utf8(report).unwrap();
 
         // Build expected output programmatically to preserve trailing spaces
@@ -545,7 +534,7 @@ mod tests {
             },
         };
         let mut report = Vec::new();
-        let () = report_terminal_opts(&m, code.as_bytes(), Path::new("<stdin>"), &mut report, AdditionalContext::Extra(1, 1)).unwrap();
+        let () = report_terminal_opts(&m, code.as_bytes(), Path::new("<stdin>"), &mut report, Opts { extra_lines: Some((1, 1)) }).unwrap();
         let report = String::from_utf8(report).unwrap();
 
         // Build expected output programmatically to preserve trailing spaces
@@ -587,7 +576,7 @@ mod tests {
             },
         };
         let mut report = Vec::new();
-        let () = report_terminal_opts(&m, code.as_bytes(), Path::new("<stdin>"), &mut report, AdditionalContext::Extra(5, 2)).unwrap();
+        let () = report_terminal_opts(&m, code.as_bytes(), Path::new("<stdin>"), &mut report, Opts { extra_lines: Some((5, 2)) }).unwrap();
         let report = String::from_utf8(report).unwrap();
 
         // Build expected output programmatically to preserve trailing spaces
@@ -627,7 +616,7 @@ mod tests {
             },
         };
         let mut report = Vec::new();
-        let () = report_terminal_opts(&m, code.as_bytes(), Path::new("<stdin>"), &mut report, AdditionalContext::Extra(1, 5)).unwrap();
+        let () = report_terminal_opts(&m, code.as_bytes(), Path::new("<stdin>"), &mut report, Opts { extra_lines: Some((1, 5)) }).unwrap();
         let report = String::from_utf8(report).unwrap();
 
         // Build expected output programmatically to preserve trailing spaces
@@ -647,17 +636,17 @@ mod tests {
         assert_eq!(report, expected);
     }
 
-    /// Test AdditionalContext default and methods.
+    /// Test Opts default and methods.
     #[test]
-    fn additional_context_behavior() {
-        let default_context = AdditionalContext::default();
-        assert_eq!(default_context, AdditionalContext::None);
-        assert_eq!(default_context.lines_before(), 0);
-        assert_eq!(default_context.lines_after(), 0);
+    fn opts_behavior() {
+        let default_opts = Opts::default();
+        assert_eq!(default_opts, Opts { extra_lines: None });
+        assert_eq!(default_opts.lines_before(), 0);
+        assert_eq!(default_opts.lines_after(), 0);
 
-        let extra_context = AdditionalContext::Extra(3, 5);
-        assert_eq!(extra_context.lines_before(), 3);
-        assert_eq!(extra_context.lines_after(), 5);
+        let extra_opts = Opts { extra_lines: Some((3, 5)) };
+        assert_eq!(extra_opts.lines_before(), 3);
+        assert_eq!(extra_opts.lines_after(), 5);
     }
 
     /// Test helper functions for finding context lines.

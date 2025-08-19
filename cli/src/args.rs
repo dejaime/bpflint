@@ -67,15 +67,15 @@ pub struct Args {
 
 impl Args {
     /// Calculate the effective context configuration.
-    pub fn additional_context(&self) -> bpflint::AdditionalContext {
+    pub fn additional_context(&self) -> bpflint::Opts {
         let before = max(self.before.unwrap_or(0), self.context.unwrap_or(0));
         let after = max(self.after.unwrap_or(0), self.context.unwrap_or(0));
 
         // If both are 0 (default), use None
         if before <= 0 && after <= 0 {
-            bpflint::AdditionalContext::None
+            bpflint::Opts::default()
         } else {
-            bpflint::AdditionalContext::Extra(before, after)
+            bpflint::Opts { extra_lines: Some((before, after)) }
         }
     }
 }
@@ -160,27 +160,27 @@ mod tests {
         // Default values
         let args = try_parse(["test.c"]).unwrap();
         let context = args.additional_context();
-        assert_eq!(context, bpflint::AdditionalContext::None);
+        assert_eq!(context, bpflint::Opts { extra_lines: None });
 
         // -B 3 -A 4
         let args = try_parse(["test.c", "-B", "3", "-A", "4"]).unwrap();
         let context = args.additional_context();
-        assert_eq!(context, bpflint::AdditionalContext::Extra(3, 4));
+        assert_eq!(context, bpflint::Opts { extra_lines: Some((3, 4)) });
 
         // -C 4
         let args = try_parse(["test.c", "-C", "4"]).unwrap();
         let context = args.additional_context();
-        assert_eq!(context, bpflint::AdditionalContext::Extra(4, 4));
+        assert_eq!(context, bpflint::Opts { extra_lines: Some((4, 4)) });
 
         // -C 3 -B 2 -A 4 (should use max values)
         let args = try_parse(["test.c", "-C", "3", "-B", "2", "-A", "4"]).unwrap();
         let context = args.additional_context();
-        assert_eq!(context, bpflint::AdditionalContext::Extra(3, 4)); // max(3, 2) = 3, max(3, 4) = 4
+        assert_eq!(context, bpflint::Opts { extra_lines: Some((3, 4)) }); // max(3, 2) = 3, max(3, 4) = 4
 
         // -C 5 -B 2 -A 1 (context wins)
         let args = try_parse(["test.c", "-C", "5", "-B", "2", "-A", "1"]).unwrap();
         let context = args.additional_context();
-        assert_eq!(context, bpflint::AdditionalContext::Extra(5, 5)); // max(5, 2) = 5, max(5, 1) = 5
+        assert_eq!(context, bpflint::Opts { extra_lines: Some((5, 5)) }); // max(5, 2) = 5, max(5, 1) = 5
     }
 
     /// Test parse_context_line_count function directly.
