@@ -19,7 +19,7 @@ impl Opts {
     pub fn lines_before(self) -> usize {
         match self.extra_lines {
             None => 0,
-            Some((before, _)) => before as usize,
+            Some((before, _)) => usize::from(before),
         }
     }
 
@@ -27,7 +27,7 @@ impl Opts {
     pub fn lines_after(self) -> usize {
         match self.extra_lines {
             None => 0,
-            Some((_, after)) => after as usize,
+            Some((_, after)) => usize::from(after),
         }
     }
 }
@@ -651,7 +651,7 @@ mod tests {
 
     /// Test helper functions for finding context lines.
     #[test]
-    fn test_find_line_start_by_row() {
+    fn find_line_start_by_row() {
         let code = b"line 0\nline 1\nline 2\n";
         assert_eq!(find_line_start_by_row(code, 0), 0);
         assert_eq!(find_line_start_by_row(code, 1), 7);
@@ -660,7 +660,7 @@ mod tests {
     }
 
     #[test]
-    fn test_count_lines() {
+    fn count_lines() {
         assert_eq!(count_lines(b""), 0);
         assert_eq!(count_lines(b"single line"), 1);
         assert_eq!(count_lines(b"line 1\nline 2"), 2);
@@ -668,7 +668,7 @@ mod tests {
     }
 
     #[test]
-    fn test_find_context_lines_before() {
+    fn find_context_lines_before() {
         let code = b"line 0\nline 1\nline 2\nline 3\n";
 
         // No context requested
@@ -687,7 +687,7 @@ mod tests {
     }
 
     #[test]
-    fn test_find_context_lines_after() {
+    fn find_context_lines_after() {
         let code = b"line 0\nline 1\nline 2\nline 3\n";
 
         // No context requested
