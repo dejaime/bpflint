@@ -1,4 +1,3 @@
-use std::cmp::max;
 use std::fs::File;
 use std::io::BufRead as _;
 use std::io::BufReader;
@@ -83,10 +82,33 @@ pub struct Args {
 }
 
 impl Args {
+    /// Parse command line arguments with validation.
+    pub fn parse() -> Self {
+        let args = <Self as Parser>::parse();
+        args.validate().unwrap_or_else(|e| {
+            eprintln!("{}", e);
+            std::process::exit(1);
+        });
+        args
+    }
+
+    /// Validate that -C is not combined with -A or -B.
+    fn validate(&self) -> Result<()> {
+        if self.context.is_some() && (self.before.is_some() || self.after.is_some()) {
+            anyhow::bail!("error: -C/--context cannot be combined with -A/--after or -B/--before");
+        }
+        Ok(())
+    }
+
     /// Calculate the effective context configuration.
     pub fn additional_context(&self) -> bpflint::Opts {
-        let before = max(self.before.unwrap_or(0), self.context.unwrap_or(0));
-        let after = max(self.after.unwrap_or(0), self.context.unwrap_or(0));
+        let (before, after) = if let Some(context) = self.context {
+            // -C sets both before and after to the same value
+            (context, context)
+        } else {
+            // Use -A and -B values directly (they can be combined)
+            (self.before.unwrap_or(0), self.after.unwrap_or(0))
+        };
 
         // If both are 0 (default), use None
         if before <= 0 && after <= 0 {
@@ -179,8 +201,9 @@ mod tests {
         let context = args.additional_context();
         assert_eq!(context, bpflint::Opts { extra_lines: None });
 
-        // -B 3 -A 4
+        // -B 3 -A 4 (can be combined)
         let args = try_parse(["test.c", "-B", "3", "-A", "4"]).unwrap();
+        args.validate().unwrap(); // Should not error
         let context = args.additional_context();
         assert_eq!(
             context,
@@ -189,8 +212,9 @@ mod tests {
             }
         );
 
-        // -C 4
+        // -C 4 (sets both before and after to 4)
         let args = try_parse(["test.c", "-C", "4"]).unwrap();
+        args.validate().unwrap(); // Should not error
         let context = args.additional_context();
         assert_eq!(
             context,
@@ -198,26 +222,37 @@ mod tests {
                 extra_lines: Some((4, 4))
             }
         );
+    }
 
-        // -C 3 -B 2 -A 4 (should use max values)
+    /// Test that -C cannot be combined with -A or -B.
+    #[test]
+    fn context_conflict_validation() {
+        fn try_parse<I, T>(args: I) -> Result<Args, clap::Error>
+        where
+            I: IntoIterator<Item = T>,
+            T: Into<OsString> + Clone,
+        {
+            let args = [OsString::from("executable")]
+                .into_iter()
+                .chain(args.into_iter().map(T::into));
+            Args::try_parse_from(args)
+        }
+
+        // -C with -B should fail validation
+        let args = try_parse(["test.c", "-C", "3", "-B", "2"]).unwrap();
+        assert!(args.validate().is_err());
+
+        // -C with -A should fail validation
+        let args = try_parse(["test.c", "-C", "3", "-A", "4"]).unwrap();
+        assert!(args.validate().is_err());
+
+        // -C with both -A and -B should fail validation
         let args = try_parse(["test.c", "-C", "3", "-B", "2", "-A", "4"]).unwrap();
-        let context = args.additional_context();
-        assert_eq!(
-            context,
-            bpflint::Opts {
-                extra_lines: Some((3, 4))
-            }
-        ); // max(3, 2) = 3, max(3, 4) = 4
+        assert!(args.validate().is_err());
 
-        // -C 5 -B 2 -A 1 (context wins)
-        let args = try_parse(["test.c", "-C", "5", "-B", "2", "-A", "1"]).unwrap();
-        let context = args.additional_context();
-        assert_eq!(
-            context,
-            bpflint::Opts {
-                extra_lines: Some((5, 5))
-            }
-        ); // max(5, 2) = 5, max(5, 1) = 5
+        // -A and -B without -C should pass validation
+        let args = try_parse(["test.c", "-B", "2", "-A", "4"]).unwrap();
+        args.validate().unwrap();
     }
 
     /// Test parse_context_line_count function directly.

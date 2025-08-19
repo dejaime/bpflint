@@ -19,8 +19,6 @@ use anyhow::Context as _;
 use anyhow::Error;
 use anyhow::Result;
 
-use clap::Parser as _;
-
 use tracing::Level;
 use tracing::subscriber::set_global_default as set_global_subscriber;
 use tracing_subscriber::FmtSubscriber;
