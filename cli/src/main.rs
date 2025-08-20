@@ -71,7 +71,7 @@ where
 }
 
 fn main_impl() -> Result<(), ExitError> {
-    let args = args::Args::try_parse()?;
+    let args = args::Args::parse(); // Clap handles --help/--version automatically
     let args::Args {
         srcs,
         print_lints,
