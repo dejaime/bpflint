@@ -2,6 +2,7 @@ use std::fs::File;
 use std::io::BufRead as _;
 use std::io::BufReader;
 use std::path::PathBuf;
+use std::process::exit;
 
 use anyhow::Context as _;
 use anyhow::Result;
@@ -86,8 +87,8 @@ impl Args {
     pub fn parse() -> Self {
         let args = <Self as Parser>::parse();
         args.validate().unwrap_or_else(|e| {
-            eprintln!("{}", e);
-            std::process::exit(1);
+            eprintln!("{e}");
+            exit(1);
         });
         args
     }
@@ -111,7 +112,7 @@ impl Args {
         };
 
         // If both are 0 (default), use None
-        if before <= 0 && after <= 0 {
+        if before == 0 && after == 0 {
             bpflint::Opts::default()
         } else {
             bpflint::Opts {
@@ -255,7 +256,7 @@ mod tests {
         args.validate().unwrap();
     }
 
-    /// Test parse_context_line_count function directly.
+    /// Test `parse_context_line_count` function directly.
     #[test]
     fn parse_context_line_count_validation() {
         // Valid values

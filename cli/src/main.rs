@@ -123,18 +123,18 @@ fn main_impl() -> Result<(), ExitError> {
         Ok(())
     } else {
         let mut result = Ok(());
-        for src_path in srcs.into_iter().flatten() {
-            let code = read(&src_path)
+        for src_path in srcs.iter().flatten() {
+            let code = read(src_path)
                 .with_context(|| format!("failed to read `{}`", src_path.display()))?;
 
-            let match_ext = has_bpf_c_ext(&src_path).not().then_some(&m_ext_is_c);
+            let match_ext = has_bpf_c_ext(src_path).not().then_some(&m_ext_is_c);
             let matches =
                 lint(&code).with_context(|| format!("failed to lint `{}`", src_path.display()))?;
             for m in match_ext.into_iter().chain(matches.iter()) {
                 let () = report_terminal_opts(
                     m,
                     &code,
-                    &src_path,
+                    src_path,
                     &mut stdout,
                     additional_context_config,
                 )?;
