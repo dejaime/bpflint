@@ -8,6 +8,7 @@ use anyhow::Context as _;
 use anyhow::Result;
 
 use clap::ArgAction;
+use clap::ArgGroup;
 use clap::Parser;
 
 fn parse_files(s: &str) -> Result<Vec<PathBuf>> {
@@ -58,6 +59,11 @@ fn parse_context_line_count(s: &str) -> Result<u8> {
 /// A command line interface for bpflint.
 #[derive(Debug, Parser)]
 #[command(version = env!("VERSION"))]
+#[command(group(
+    ArgGroup::new("context_mode")
+        .args(["before", "after"])
+        .conflicts_with("context")
+))]
 pub struct Args {
     /// The BPF C source files to lint.
     ///
@@ -83,24 +89,6 @@ pub struct Args {
 }
 
 impl Args {
-    /// Parse command line arguments with validation.
-    pub fn parse() -> Self {
-        let args = <Self as Parser>::parse();
-        args.validate().unwrap_or_else(|e| {
-            eprintln!("{e}");
-            exit(1);
-        });
-        args
-    }
-
-    /// Validate that -C is not combined with -A or -B.
-    fn validate(&self) -> Result<()> {
-        if self.context.is_some() && (self.before.is_some() || self.after.is_some()) {
-            anyhow::bail!("error: -C/--context cannot be combined with -A/--after or -B/--before");
-        }
-        Ok(())
-    }
-
     /// Calculate the effective context configuration.
     pub fn additional_context(&self) -> bpflint::Opts {
         let (before, after) = if let Some(context) = self.context {
@@ -204,7 +192,6 @@ mod tests {
 
         // -B 3 -A 4 (can be combined)
         let args = try_parse(["test.c", "-B", "3", "-A", "4"]).unwrap();
-        args.validate().unwrap(); // Should not error
         let context = args.additional_context();
         assert_eq!(
             context,
@@ -215,7 +202,6 @@ mod tests {
 
         // -C 4 (sets both before and after to 4)
         let args = try_parse(["test.c", "-C", "4"]).unwrap();
-        args.validate().unwrap(); // Should not error
         let context = args.additional_context();
         assert_eq!(
             context,
@@ -225,7 +211,7 @@ mod tests {
         );
     }
 
-    /// Test that -C cannot be combined with -A or -B.
+    /// Test that -C cannot be combined with -A or -B using clap groups.
     #[test]
     fn context_conflict_validation() {
         fn try_parse<I, T>(args: I) -> Result<Args, clap::Error>
@@ -239,21 +225,17 @@ mod tests {
             Args::try_parse_from(args)
         }
 
-        // -C with -B should fail validation
-        let args = try_parse(["test.c", "-C", "3", "-B", "2"]).unwrap();
-        assert!(args.validate().is_err());
+        // -C with -B should fail parsing (clap will reject it)
+        assert!(try_parse(["test.c", "-C", "3", "-B", "2"]).is_err());
 
-        // -C with -A should fail validation
-        let args = try_parse(["test.c", "-C", "3", "-A", "4"]).unwrap();
-        assert!(args.validate().is_err());
+        // -C with -A should fail parsing (clap will reject it)
+        assert!(try_parse(["test.c", "-C", "3", "-A", "4"]).is_err());
 
-        // -C with both -A and -B should fail validation
-        let args = try_parse(["test.c", "-C", "3", "-B", "2", "-A", "4"]).unwrap();
-        assert!(args.validate().is_err());
+        // -C with both -A and -B should fail parsing (clap will reject it)
+        assert!(try_parse(["test.c", "-C", "3", "-B", "2", "-A", "4"]).is_err());
 
-        // -A and -B without -C should pass validation
-        let args = try_parse(["test.c", "-B", "2", "-A", "4"]).unwrap();
-        args.validate().unwrap();
+        // -A and -B without -C should pass parsing
+        assert!(try_parse(["test.c", "-B", "2", "-A", "4"]).is_ok());
     }
 
     /// Test `parse_context_line_count` function directly.
