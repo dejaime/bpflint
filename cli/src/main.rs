@@ -19,6 +19,8 @@ use anyhow::Context as _;
 use anyhow::Error;
 use anyhow::Result;
 
+use clap::Parser;
+
 use tracing::Level;
 use tracing::subscriber::set_global_default as set_global_subscriber;
 use tracing_subscriber::FmtSubscriber;
@@ -69,7 +71,7 @@ where
 }
 
 fn main_impl() -> Result<(), ExitError> {
-    let args = args::Args::parse();
+    let args = args::Args::try_parse()?;
     let args::Args {
         srcs,
         print_lints,
@@ -77,7 +79,7 @@ fn main_impl() -> Result<(), ExitError> {
         ..
     } = &args;
 
-    let additional_context_config = args.additional_context();
+    let additional_context_config = args.additional_options();
 
     let level = match verbosity {
         0 => Level::WARN,

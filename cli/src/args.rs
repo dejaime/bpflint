@@ -2,13 +2,11 @@ use std::fs::File;
 use std::io::BufRead as _;
 use std::io::BufReader;
 use std::path::PathBuf;
-use std::process::exit;
 
 use anyhow::Context as _;
 use anyhow::Result;
 
 use clap::ArgAction;
-use clap::ArgGroup;
 use clap::Parser;
 
 fn parse_files(s: &str) -> Result<Vec<PathBuf>> {
@@ -59,11 +57,6 @@ fn parse_context_line_count(s: &str) -> Result<u8> {
 /// A command line interface for bpflint.
 #[derive(Debug, Parser)]
 #[command(version = env!("VERSION"))]
-#[command(group(
-    ArgGroup::new("context_mode")
-        .args(["before", "after"])
-        .conflicts_with("context")
-))]
 pub struct Args {
     /// The BPF C source files to lint.
     ///
@@ -84,13 +77,13 @@ pub struct Args {
     #[arg(short = 'A', long = "after", value_parser = parse_context_line_count)]
     pub after: Option<u8>,
     /// Number of lines to show before and after the error line.
-    #[arg(short = 'C', long = "context", value_parser = parse_context_line_count)]
+    #[arg(short = 'C', long = "context", value_parser = parse_context_line_count, conflicts_with_all = ["before", "after"])]
     pub context: Option<u8>,
 }
 
 impl Args {
     /// Calculate the effective context configuration.
-    pub fn additional_context(&self) -> bpflint::Opts {
+    pub fn additional_options(&self) -> bpflint::Opts {
         let (before, after) = if let Some(context) = self.context {
             // -C sets both before and after to the same value
             (context, context)
@@ -187,12 +180,12 @@ mod tests {
 
         // Default values
         let args = try_parse(["test.c"]).unwrap();
-        let context = args.additional_context();
+        let context = args.additional_options();
         assert_eq!(context, bpflint::Opts { extra_lines: None });
 
         // -B 3 -A 4 (can be combined)
         let args = try_parse(["test.c", "-B", "3", "-A", "4"]).unwrap();
-        let context = args.additional_context();
+        let context = args.additional_options();
         assert_eq!(
             context,
             bpflint::Opts {
@@ -202,7 +195,7 @@ mod tests {
 
         // -C 4 (sets both before and after to 4)
         let args = try_parse(["test.c", "-C", "4"]).unwrap();
-        let context = args.additional_context();
+        let context = args.additional_options();
         assert_eq!(
             context,
             bpflint::Opts {
