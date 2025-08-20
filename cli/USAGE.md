@@ -21,4 +21,14 @@ Options:
 
   -V, --version
           Print version
+
+  -A, --after <AFTER>
+          Number of additional lines to show after the error line
+
+  -B, --before <BEFORE>
+          Number of additional lines to show before the error line
+
+  -C, --context <CONTEXT>
+          Number of additional lines to show before and after the error line
+          (cannot be combined with -A/--after or -B/--before)
 ```
