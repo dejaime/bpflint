@@ -15,7 +15,7 @@ pub struct Opts {
 
 impl Opts {
     /// Get the number of lines to show before the lint match.
-    pub fn lines_before(self) -> usize {
+    pub fn lines_before(&self) -> usize {
         match self.extra_lines {
             None => 0,
             Some((before, _)) => usize::from(before),
@@ -23,7 +23,7 @@ impl Opts {
     }
 
     /// Get the number of lines to show after the error.
-    pub fn lines_after(self) -> usize {
+    pub fn lines_after(&self) -> usize {
         match self.extra_lines {
             None => 0,
             Some((_, after)) => usize::from(after),
@@ -120,7 +120,7 @@ pub fn report_terminal(
     path: &Path,
     writer: &mut dyn io::Write,
 ) -> Result<()> {
-    report_terminal_opts(r#match, code, path, writer, Opts::default())
+    report_terminal_opts(r#match, code, path, writer, &Opts::default())
 }
 
 /// Report a lint match in terminal style with extra lines for context as configured.
@@ -451,7 +451,7 @@ mod tests {
             code.as_bytes(),
             Path::new("<stdin>"),
             &mut report_new,
-            Opts::default(),
+            &Opts::default(),
         )
         .unwrap();
 
@@ -487,7 +487,7 @@ mod tests {
             code.as_bytes(),
             Path::new("<stdin>"),
             &mut report,
-            Opts {
+            &Opts {
                 extra_lines: Some((2, 1)),
             },
         )
@@ -537,7 +537,7 @@ mod tests {
             code.as_bytes(),
             Path::new("<stdin>"),
             &mut report,
-            Opts {
+            &Opts {
                 extra_lines: Some((1, 1)),
             },
         )
@@ -585,7 +585,7 @@ mod tests {
             code.as_bytes(),
             Path::new("<stdin>"),
             &mut report,
-            Opts {
+            &Opts {
                 extra_lines: Some((5, 2)),
             },
         )
@@ -631,7 +631,7 @@ mod tests {
             code.as_bytes(),
             Path::new("<stdin>"),
             &mut report,
-            Opts {
+            &Opts {
                 extra_lines: Some((1, 5)),
             },
         )
@@ -656,7 +656,7 @@ mod tests {
     #[test]
     fn opts_behavior() {
         let default_opts = Opts::default();
-        assert_eq!(default_opts, Opts { extra_lines: None });
+        assert_eq!(default_opts.extra_lines, None);
         assert_eq!(default_opts.lines_before(), 0);
         assert_eq!(default_opts.lines_after(), 0);
 

@@ -112,19 +112,20 @@ mod tests {
 
     use tempfile::NamedTempFile;
 
+    fn try_parse<I, T>(srcs: I) -> Result<Args, clap::Error>
+    where
+        I: IntoIterator<Item = T>,
+        T: Into<OsString> + Clone,
+    {
+        let args = [OsString::from("executable")]
+            .into_iter()
+            .chain(srcs.into_iter().map(T::into));
+        Args::try_parse_from(args)
+    }
+
     /// Make sure that we can recognize file list inputs as expected.
     #[test]
     fn source_file_parsing() {
-        fn try_parse<I, T>(srcs: I) -> Result<Args, clap::Error>
-        where
-            I: IntoIterator<Item = T>,
-            T: Into<OsString> + Clone,
-        {
-            let args = [OsString::from("executable")]
-                .into_iter()
-                .chain(srcs.into_iter().map(T::into));
-            Args::try_parse_from(args)
-        }
 
         // Single file by path.
         let srcs = ["foobar"];
@@ -167,56 +168,26 @@ mod tests {
     /// Test context argument parsing and effective values.
     #[test]
     fn context_argument_parsing() {
-        fn try_parse<I, T>(args: I) -> Result<Args, clap::Error>
-        where
-            I: IntoIterator<Item = T>,
-            T: Into<OsString> + Clone,
-        {
-            let args = [OsString::from("executable")]
-                .into_iter()
-                .chain(args.into_iter().map(T::into));
-            Args::try_parse_from(args)
-        }
 
         // Default values
         let args = try_parse(["test.c"]).unwrap();
-        let context = args.additional_options();
-        assert_eq!(context, bpflint::Opts { extra_lines: None });
+        let opts = args.additional_options();
+        assert_eq!(opts.extra_lines, None);
 
         // -B 3 -A 4 (can be combined)
         let args = try_parse(["test.c", "-B", "3", "-A", "4"]).unwrap();
-        let context = args.additional_options();
-        assert_eq!(
-            context,
-            bpflint::Opts {
-                extra_lines: Some((3, 4))
-            }
-        );
+        let opts = args.additional_options();
+        assert_eq!(opts.extra_lines, Some((3, 4)));
 
         // -C 4 (sets both before and after to 4)
         let args = try_parse(["test.c", "-C", "4"]).unwrap();
-        let context = args.additional_options();
-        assert_eq!(
-            context,
-            bpflint::Opts {
-                extra_lines: Some((4, 4))
-            }
-        );
+        let opts = args.additional_options();
+        assert_eq!(opts.extra_lines, Some((4, 4)));
     }
 
     /// Test that -C cannot be combined with -A or -B using clap groups.
     #[test]
     fn context_conflict_validation() {
-        fn try_parse<I, T>(args: I) -> Result<Args, clap::Error>
-        where
-            I: IntoIterator<Item = T>,
-            T: Into<OsString> + Clone,
-        {
-            let args = [OsString::from("executable")]
-                .into_iter()
-                .chain(args.into_iter().map(T::into));
-            Args::try_parse_from(args)
-        }
 
         // -C with -B should fail parsing (clap will reject it)
         assert!(try_parse(["test.c", "-C", "3", "-B", "2"]).is_err());

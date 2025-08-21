@@ -79,7 +79,7 @@ fn main_impl() -> Result<(), ExitError> {
         ..
     } = &args;
 
-    let additional_context_config = args.additional_options();
+    let additional_opts = args.additional_options();
 
     let level = match verbosity {
         0 => Level::WARN,
@@ -138,7 +138,7 @@ fn main_impl() -> Result<(), ExitError> {
                     &code,
                     src_path,
                     &mut stdout,
-                    additional_context_config,
+                    &additional_opts,
                 )?;
                 if result.is_ok() {
                     result = Err(ExitError::ExitCode(ExitCode::FAILURE));
