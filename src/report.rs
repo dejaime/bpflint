@@ -7,7 +7,7 @@ use crate::LintMatch;
 use crate::lines::Lines;
 
 /// Configuration options for terminal reporting.
-#[derive(Default, Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Default, Clone, Debug)]
 pub struct Opts {
     /// Extra context lines: (`lines_before`, `lines_after`).
     pub extra_lines: Option<(u8, u8)>,
