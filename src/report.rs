@@ -153,7 +153,7 @@ pub fn report_terminal_opts(
     code: &[u8],
     path: &Path,
     writer: &mut dyn io::Write,
-    opts: Opts,
+    opts: &Opts,
 ) -> Result<()> {
     let LintMatch {
         lint_name,
