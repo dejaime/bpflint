@@ -14,7 +14,7 @@ pub struct Opts {
 }
 
 impl Opts {
-    /// Get the number of lines to show before the error.
+    /// Get the number of lines to show before the lint match.
     pub fn lines_before(self) -> usize {
         match self.extra_lines {
             None => 0,
