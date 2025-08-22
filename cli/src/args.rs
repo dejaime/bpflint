@@ -9,6 +9,7 @@ use anyhow::Result;
 use clap::ArgAction;
 use clap::Parser;
 
+
 fn parse_files(s: &str) -> Result<Vec<PathBuf>> {
     if let Some(rest) = s.strip_prefix('@') {
         let file =

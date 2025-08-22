@@ -34,6 +34,7 @@ mod report;
 
 use std::ops;
 
+
 /// A position in a multi-line text document, in terms of rows and columns.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Point {

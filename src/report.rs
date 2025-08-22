@@ -244,6 +244,7 @@ pub fn report_terminal_opts(
     Ok(())
 }
 
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -254,6 +255,7 @@ mod tests {
 
     use crate::Point;
     use crate::Range;
+
 
     /// Tests that a match with an empty range includes no code snippet.
     #[test]
@@ -310,15 +312,15 @@ mod tests {
         let report = String::from_utf8(report).unwrap();
 
         let expected = indoc! { r#"
-            warning: [probe-read] bpf_probe_read() is deprecated
-              --> <stdin>:2:4
-              | 
-            2 |  /     bpf_probe_read(
-            3 |  |       event.comm,
-            4 |  |       TASK_COMM_LEN,
-            5 |  |       prev->comm);
-              |  |_________________^
-              | 
+          warning: [probe-read] bpf_probe_read() is deprecated
+            --> <stdin>:2:4
+            | 
+          2 |  /     bpf_probe_read(
+          3 |  |       event.comm,
+          4 |  |       TASK_COMM_LEN,
+          5 |  |       prev->comm);
+            |  |_________________^
+            | 
         "# };
         assert_eq!(report, expected);
     }
@@ -351,12 +353,12 @@ mod tests {
         let report = String::from_utf8(report).unwrap();
 
         let expected = indoc! { r#"
-            warning: [probe-read] bpf_probe_read() is deprecated
-              --> <stdin>:5:4
-              | 
-            5 |     bpf_probe_read(event.comm, TASK_COMM_LEN, prev->comm);
-              |     ^^^^^^^^^^^^^^
-              | 
+          warning: [probe-read] bpf_probe_read() is deprecated
+            --> <stdin>:5:4
+            | 
+          5 |     bpf_probe_read(event.comm, TASK_COMM_LEN, prev->comm);
+            |     ^^^^^^^^^^^^^^
+            | 
         "# };
         assert_eq!(report, expected);
     }

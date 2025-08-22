@@ -34,6 +34,7 @@ use bpflint::builtin_lints;
 use bpflint::lint;
 use bpflint::report_terminal_opts;
 
+
 fn has_bpf_c_ext(path: &Path) -> bool {
     if let Some(file_name) = path.file_name() {
         if file_name
@@ -46,6 +47,7 @@ fn has_bpf_c_ext(path: &Path) -> bool {
     }
     false
 }
+
 
 enum ExitError {
     Anyhow(Error),
@@ -69,6 +71,7 @@ where
         Self::Anyhow(Error::from(error))
     }
 }
+
 
 fn main_impl() -> Result<(), ExitError> {
     let args = args::Args::parse();
@@ -143,6 +146,7 @@ fn main_impl() -> Result<(), ExitError> {
     }
 }
 
+
 #[derive(Debug)]
 enum ExitResult {
     Ok(()),
@@ -164,6 +168,7 @@ impl Termination for ExitResult {
     }
 }
 
+
 fn main() -> ExitResult {
     match main_impl() {
         Ok(()) => ExitResult::Ok(()),
@@ -171,9 +176,11 @@ fn main() -> ExitResult {
     }
 }
 
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
 
     /// Test that [`has_bpf_c_ext`] works correctly for various
     /// paths/extensions.
