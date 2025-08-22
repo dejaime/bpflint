@@ -133,13 +133,7 @@ fn main_impl() -> Result<(), ExitError> {
             let matches =
                 lint(&code).with_context(|| format!("failed to lint `{}`", src_path.display()))?;
             for m in match_ext.into_iter().chain(matches.iter()) {
-                let () = report_terminal_opts(
-                    m,
-                    &code,
-                    src_path,
-                    &mut stdout,
-                    &additional_opts,
-                )?;
+                let () = report_terminal_opts(m, &code, src_path, &mut stdout, &additional_opts)?;
                 if result.is_ok() {
                     result = Err(ExitError::ExitCode(ExitCode::FAILURE));
                 }

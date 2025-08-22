@@ -126,7 +126,6 @@ mod tests {
     /// Make sure that we can recognize file list inputs as expected.
     #[test]
     fn source_file_parsing() {
-
         // Single file by path.
         let srcs = ["foobar"];
         let args = try_parse(srcs).unwrap();
@@ -168,7 +167,6 @@ mod tests {
     /// Test context argument parsing and effective values.
     #[test]
     fn context_argument_parsing() {
-
         // Default values
         let args = try_parse(["test.c"]).unwrap();
         let opts = args.additional_options();
@@ -188,7 +186,6 @@ mod tests {
     /// Test that -C cannot be combined with -A or -B using clap groups.
     #[test]
     fn context_conflict_validation() {
-
         // -C with -B should fail parsing (clap will reject it)
         assert!(try_parse(["test.c", "-C", "3", "-B", "2"]).is_err());
 
