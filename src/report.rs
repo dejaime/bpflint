@@ -344,8 +344,8 @@ mod tests {
             message: "bpf_probe_read() is deprecated".to_string(),
             range: Range {
                 bytes: 160..174,
-                start_point: Point { row: 5, col: 4 },
-                end_point: Point { row: 5, col: 18 },
+                start_point: Point { row: 6, col: 4 },
+                end_point: Point { row: 6, col: 18 },
             },
         };
         let mut report = Vec::new();
@@ -354,9 +354,9 @@ mod tests {
 
         let expected = indoc! { r#"
           warning: [probe-read] bpf_probe_read() is deprecated
-            --> <stdin>:5:4
+            --> <stdin>:6:4
             | 
-          5 |     bpf_probe_read(event.comm, TASK_COMM_LEN, prev->comm);
+          6 |     bpf_probe_read(event.comm, TASK_COMM_LEN, prev->comm);
             |     ^^^^^^^^^^^^^^
             | 
         "# };
