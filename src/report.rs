@@ -94,6 +94,22 @@ fn find_context_lines_after(code: &[u8], end_row: usize, count: usize) -> Vec<(u
     context_lines
 }
 
+/// Display context lines to the writer.
+fn display_context_lines(
+    context_lines: &[(usize, usize)],
+    code: &[u8],
+    writer: &mut dyn io::Write,
+) -> Result<()> {
+    for (context_row, context_byte) in context_lines {
+        let mut lines = Lines::new(code, *context_byte);
+        if let Some(line) = lines.next() {
+            let lprefix = format!("{context_row} | ");
+            writeln!(writer, "{lprefix}{}", String::from_utf8_lossy(line))?;
+        }
+    }
+    Ok(())
+}
+
 /// Report a lint match in terminal style.
 ///
 /// - `match` is the match to create a report for
@@ -184,81 +200,45 @@ pub fn report_terminal_opts(
     let prefix = format!("{:width$} | ", "", width = max_row.to_string().len());
     writeln!(writer, "{prefix}")?;
 
-    if start_row == end_row {
-        // Single line error with context
+    // Show context lines before (if any)
+    display_context_lines(&context_lines_before, code, writer)?;
 
-        // Show context lines before (if any)
-        for (context_row, context_byte) in context_lines_before {
-            let mut lines = Lines::new(code, context_byte);
-            if let Some(line) = lines.next() {
-                let lprefix = format!("{context_row} | ");
+    // Show the error lines
+    let mut lines = Lines::new(code, range.bytes.start);
+    let is_multiline = start_row != end_row;
+
+    for (idx, row) in (start_row..=end_row).enumerate() {
+        let lprefix = format!("{row} | ");
+        if let Some(line) = lines.next() {
+            if is_multiline {
+                let c = if idx == 0 { "/" } else { "|" };
+                writeln!(writer, "{lprefix} {c} {}", String::from_utf8_lossy(line))?;
+            } else {
                 writeln!(writer, "{lprefix}{}", String::from_utf8_lossy(line))?;
             }
-        }
-
-        // Show the error line
-        let mut lines = Lines::new(code, range.bytes.start);
-        if let Some(line) = lines.next() {
-            let lprefix = format!("{start_row} | ");
-            writeln!(writer, "{lprefix}{}", String::from_utf8_lossy(line))?;
-            writeln!(
-                writer,
-                "{prefix}{:indent$}{:^<width$}",
-                "",
-                "",
-                indent = start_col,
-                width = end_col.saturating_sub(start_col)
-            )?;
-        } else {
+        } else if idx == 0 {
             // SANITY: It would be a tree-sitter bug IF the range does not
             //         map to a valid code location.
             panic!("Expected error line");
         }
-
-        // Show context lines after (if any)
-        for (context_row, context_byte) in context_lines_after {
-            let mut lines = Lines::new(code, context_byte);
-            if let Some(line) = lines.next() {
-                let lprefix = format!("{context_row} | ");
-                writeln!(writer, "{lprefix}{}", String::from_utf8_lossy(line))?;
-            } else {
-                // SANITY: `Lines` will always report at least a single
-                //          line.
-                panic!("Expected context line after error");
-            }
-        }
-    } else {
-        // Multi-line error with context
-
-        // Show context lines before (if any)
-        for (context_row, context_byte) in context_lines_before {
-            let mut lines = Lines::new(code, context_byte);
-            if let Some(line) = lines.next() {
-                let lprefix = format!("{context_row} | ");
-                writeln!(writer, "{lprefix}{}", String::from_utf8_lossy(line))?;
-            }
-        }
-
-        // Show the error lines
-        let mut lines = Lines::new(code, range.bytes.start);
-        for (idx, row) in (start_row..=end_row).enumerate() {
-            let lprefix = format!("{row} | ");
-            let c = if idx == 0 { "/" } else { "|" };
-            if let Some(line) = lines.next() {
-                writeln!(writer, "{lprefix} {c} {}", String::from_utf8_lossy(line))?;
-            }
-        }
-        writeln!(writer, "{prefix} |{:_<width$}^", "", width = end_col)?;
-
-        // Show context lines after (if any)
-        for (context_row, context_byte) in context_lines_after {
-            let mut lines = Lines::new(code, context_byte);
-            if let Some(line) = lines.next() {
-                let lprefix = format!("{context_row} | ");
-                writeln!(writer, "{lprefix}{}", String::from_utf8_lossy(line))?;
-            }
-        }
     }
+
+    // Show the appropriate underline
+    if is_multiline {
+        writeln!(writer, "{prefix} |{:_<width$}^", "", width = end_col)?;
+    } else {
+        writeln!(
+            writer,
+            "{prefix}{:indent$}{:^<width$}",
+            "",
+            "",
+            indent = start_col,
+            width = end_col.saturating_sub(start_col)
+        )?;
+    }
+
+    // Show context lines after (if any)
+    display_context_lines(&context_lines_after, code, writer)?;
 
     writeln!(writer, "{prefix}")?;
     Ok(())
