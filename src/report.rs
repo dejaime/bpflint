@@ -210,12 +210,12 @@ pub fn report_terminal_opts(
     for (idx, row) in (start_row..=end_row).enumerate() {
         let lprefix = format!("{row} | ");
         if let Some(line) = lines.next() {
+            let mut c = "";
             if is_multiline {
-                let c = if idx == 0 { "/" } else { "|" };
-                writeln!(writer, "{lprefix} {c} {}", String::from_utf8_lossy(line))?;
-            } else {
-                writeln!(writer, "{lprefix}{}", String::from_utf8_lossy(line))?;
+                c = if idx == 0 { " / " } else { " | " };
             }
+
+            writeln!(writer, "{lprefix}{c}{}", String::from_utf8_lossy(line))?;
         } else if idx == 0 {
             // SANITY: It would be a tree-sitter bug IF the range does not
             //         map to a valid code location.
